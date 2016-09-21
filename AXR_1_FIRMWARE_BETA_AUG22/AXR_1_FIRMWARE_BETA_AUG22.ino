@@ -142,7 +142,7 @@ void sampleMode(){
     //    SerialUSB.println("[0] Go Back");
     
     read=999;
-   
+    
     if (SerialUSB.available() > 0){
         read = SerialUSB.read();
     }
@@ -218,7 +218,7 @@ void config(){
             
         case '2':
             clean();
-             SerialUSB.println("HD");
+            SerialUSB.println("HD");
             SerialUSB.println("==== HD Sample Menu ====");
             SerialUSB.println("[1] HD Sample ON");
             SerialUSB.println("[2] HD Sample OFF");
@@ -273,13 +273,12 @@ void move_Relays (int input) {
 
 void set_spi(){
     pinMode(SCK, OUTPUT);
-    pinMode(CS, OUTPUT);
     pinMode(MISO, INPUT);
     
     
     
     digitalWrite(SCK, LOW);
-    digitalWrite(CS, HIGH);
+    
     
     digitalWrite(SCK, HIGH);
     
@@ -316,20 +315,25 @@ void check_probe(int chip){
         avg=avg+meassure_volt(chip);
     }
     avg=avg/20;
-    SerialUSB.println(CalcRes(res));
+    SerialUSB.println(CalcRes(avg));
     move_Relays(0);
 }
 
 void init_AD(){
-     pinMode(CS1,OUTPUT);
-     pinMode(CS2,OUTPUT);
-     pinMode(CS3,OUTPUT);
-     pinMode(CS4,OUTPUT);
-
+    pinMode(CS1,OUTPUT);
+    pinMode(CS2,OUTPUT);
+    pinMode(CS3,OUTPUT);
+    pinMode(CS4,OUTPUT);
+    
+    digitalWrite(CS1, HIGH);
+    digitalWrite(CS2, HIGH);
+    digitalWrite(CS3, HIGH);
+    digitalWrite(CS4, HIGH);
+    
 }
 
 void alive(){
-SerialUSB.println("AXR-1 ONLINE");
+    SerialUSB.println("AXR-1 ONLINE");
 }
 
 void setup(){
@@ -395,7 +399,7 @@ void loop(){
                 SerialUSB.println(CalcRes(meassure_volt(CS1)));
             }
             if(HD_EN==1){
-               SerialUSB.println(CalcRes(meassure_volt(CS1)));
+                SerialUSB.println(CalcRes(meassure_volt(CS1)));
                 SerialUSB.println(CalcRes(meassure_volt(CS2)));
                 SerialUSB.println(CalcRes(meassure_volt(CS3)));
                 SerialUSB.println(CalcRes(meassure_volt(CS4)));
