@@ -14,16 +14,23 @@
 //
 //
 
-
+//Included Libraries
 #include "Wire.h"
 #include "Adafruit_SI5351.h"
 #include <SPI.h>
 #include <stdint.h>
 #include "LTC_2400.h"
 
-#define CS 8
-#define gndRly 10
-#define sigRly 12
+
+//Definition of Chip Selects
+#define CS1 13
+#define CS2 10
+#define CS3 12
+#define CS4 6
+
+//Relay Definitions
+#define gndRly 5
+#define sigRly 2
 
 //*_*_*_*_*_*_*_*_*_*_*Global Variables*_*_*_*_*_*__*_*_*_*_*_*_*_*_*_*_
 
@@ -191,8 +198,6 @@ void calMode(){
     }
 }
 
-
-
 void config(){
     read=999;
     if (SerialUSB.available() > 0){
@@ -239,15 +244,31 @@ void config(){
     }
     
 }
-void move_Relays (0) {
 
-}
 void set_intialConditions(){
     pinMode(gndRly,OUTPUT);
     pinMode(sigRly,OUTPUT);
     
-    digitalWrite(gndRly,LOW); //Signal should not be shorted to GND
+    digitalWrite(gndRly,HIGH); //Signal should not be shorted to GND
     digitalWrite(sigRly,HIGH); //Signal should be connect to Diff. Amp.
+    
+    delay(1000);
+    
+    digitalWrite(gndRly,LOW); //Signal should not be shorted to GND
+    digitalWrite(sigRly,LOW); //Signal should be connect to Diff. Amp.
+}
+
+void move_Relays (int input) {
+    
+    if(input==1){
+        digitalWrite(gndRly,HIGH);
+        digitalWrite(sigRly,HIGH);
+    }
+    else if (input==0){
+        digitalWrite(gndRly,LOW);
+        digitalWrite(sigRly,LOW);
+    }
+    
 }
 
 void set_spi(){
@@ -289,22 +310,37 @@ double meassure_volt(int chipSel){
 }
 
 void check_probe(int chip){
-    
-   
-    
+    float avg=0;
+    move_Relays(1);
+    for(int i=0;i<20;i++){
+        avg=avg+meassure_volt(chip);
+    }
+    avg=avg/20;
+    SerialUSB.println(CalcRes(res));
+    move_Relays(0);
+}
+
+void init_AD(){
+     pinMode(CS1,OUTPUT);
+     pinMode(CS2,OUTPUT);
+     pinMode(CS3,OUTPUT);
+     pinMode(CS4,OUTPUT);
+
 }
 
 void alive(){
-SerialUSB.prinln("AXR-1 ONLINE");
+SerialUSB.println("AXR-1 ONLINE");
 }
 
 void setup(){
-    pinMode(CS,OUTPUT);
+    init_AD();
     set_spi();
     set_intialConditions();
-   SerialUSB.begin(115200);
-   SerialUSB.prinln("AXR-1 ONLINE");
-    delay(1000);
+    
+    SerialUSB.begin(115200);
+    alive();
+    
+    delay(10000);
     clean();
     
     while(1){
@@ -323,23 +359,23 @@ void setup(){
         }
     }
     set_Ext_Clock();
+    set_intialConditions();
     delay(1000);
     clean();
     read='S';
 }
 
 void loop(){
+    read='D';
     while(1){
         if (SerialUSB.available() > 0){
             read = SerialUSB.read();
         }
         if(read=='R'){
             stop=0; //Starts the meassurment
-            clean;
         }
         if(read=='S'){
             stop=1; //Stops the meassuremnt
-            clean();
         }
         if(read=='X'){
             SerialUSB.println("Reset");
@@ -347,21 +383,26 @@ void loop(){
             NVIC_SystemReset();// Resets the uC -> only for SAMD21
         }
         if(read=='P'){
-            check_probe(CS);
+            stop=1;
+            check_probe(CS1);
         }
         if(read=='D'){
+            stop=1;
             alive();
         }
         if(stop==0){
             if(HD_EN==0){
-                SerialUSB.println("RUN");
+                SerialUSB.println(CalcRes(meassure_volt(CS1)));
             }
             if(HD_EN==1){
-                SerialUSB.println("HD_RUN");
+               SerialUSB.println(CalcRes(meassure_volt(CS1)));
+                SerialUSB.println(CalcRes(meassure_volt(CS2)));
+                SerialUSB.println(CalcRes(meassure_volt(CS3)));
+                SerialUSB.println(CalcRes(meassure_volt(CS4)));
             }
         }
         if(stop==1){
-            SerialUSB.println("STOPPED");
+            
         }
     }
 }
